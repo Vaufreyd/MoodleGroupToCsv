@@ -1,0 +1,61 @@
+<html>
+    <header>
+        <title>Moodle Group List to CSV</title>
+    </header>
+    <body>
+            <script>
+            function CreateCSV()
+            {
+                // Get values from the form
+                filename = document.getElementById('filename').value;
+                grouplist = document.getElementById('grouplist').value;
+
+                // parse text to make list of group and student
+                // 1 group per line
+                GroupeInCsv = 'Student;Group\n';
+                var lines = grouplist.split('\n');
+                for( var i = 0; i < lines.length; i++ )
+                {
+                        // Get items from the line: group name [0], list of student [1], number of student [2]
+                        // This items are separated by tabs
+                        items = lines[i].split('\t');
+
+                        // Check group name is ok (not empty)
+                        items[0] = items[0].trim();
+                        if ( items[0].length == 0 )
+                        {
+                            // warn
+                            continue;
+                        }
+
+                        // item[1] should contain all students separated by comas
+                        students = items[1].split(',');
+                        for( var j=0; j< students.length; j++ )
+                        {
+                            GroupeInCsv = GroupeInCsv + students[j].trim() + ';' + items[0].trim() + '\n';
+                        }
+                }
+
+                // download the generated csv into a file called filename
+                // Code from https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
+                var element = document.createElement('a');
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(GroupeInCsv));
+                element.setAttribute('download', filename);
+              
+                element.style.display = 'none';
+                document.body.appendChild(element);
+              
+                element.click();
+              
+                document.body.removeChild(element);
+              }
+            </script>
+
+            <p>Step 1: You need to copy/paste the list of groups with students within the following text area. This list of groups :</p>
+            <textarea id="grouplist" style="width: 80%;height:20em;display:block;"></textarea>
+            <p>Step 2: Setup (or not) filename:</p>
+            <input type="text" id="filename" style="display:block;" value="MoodleGroups.csv">
+            <p>Step 3: Click on the button to get your file. You will be able to import it Excel, LibreOffice, Google docs, ...</p>            
+            <button onclick="CreateCSV();">Create CSV!</button>
+    </body>
+</html>
