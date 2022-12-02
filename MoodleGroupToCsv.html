@@ -4,15 +4,45 @@
     </header>
     <body>
             <script>
+
+            function GenerateCSVLine(groupName, student, bFlatCSV, emailSubstitutionString)
+            {
+                // Check if student "names" contains also emails and replace it accordingly to selected option
+                if ( bFlatCSV == false )
+                {
+                    student = student.replace( /(\s*)\(([^@]+@[^@]+)\)/, emailSubstitutionString );
+                    return student.trim() + '\n';
+                }
+
+                student = student.replace( /(\s*)\(([^@]+@[^@]+)\)/, emailSubstitutionString );
+                return student.trim() + ';' + groupName + '\n';
+            }
+
             function CreateCSV()
             {
                 // Get values from the form
-                filename = document.getElementById('filename').value;
-                grouplist = document.getElementById('grouplist').value;
+                var filename   = document.getElementById('filename').value;
+                var grouplist  = document.getElementById('grouplist').value;
+                var bFlatCSV   = document.getElementById('csv_style').checked;
+                var bKeepEmail = document.getElementById('keep_email').checked;
+
+                var emailSubstitutionString = '';
+                if ( bKeepEmail == true )
+                {
+                    emailSubstitutionString = ';$2';
+                }
+
+                // get log and empty it
+                var log = document.getElementById('log');
+                log.value = '';
+
+                var GroupsInCsv = '';
+
+                var NumberOfGroups = 0;
+                var NumberOfStudents = 0;
 
                 // parse text to make list of group and student
                 // 1 group per line
-                GroupeInCsv = 'Student;Group\n';
                 var lines = grouplist.split('\n');
                 for( var i = 0; i < lines.length; i++ )
                 {
@@ -20,26 +50,70 @@
                         // This items are separated by tabs
                         items = lines[i].split('\t');
 
-                        // Check group name is ok (not empty)
+                        // Check if group name is ok (not empty)
                         items[0] = items[0].trim();
                         if ( items[0].length == 0 )
                         {
                             // warn
+                            log.value += "Empty group name on line " + (i+1) + "\n";
                             continue;
                         }
 
+                        // Trim group name
+                        groupName = items[0].trim();
+
+                        // Increase number of groups
+                        NumberOfGroups = NumberOfGroups + 1;
+                        log.value += "Processing group " + groupName + "\n";
+
                         // item[1] should contain all students separated by comas
                         students = items[1].split(',');
+
+                        // Is there any student in this group?
+                        if ( students.length == 1 && students[0] === '' )
+                        {
+                            // warn
+                            log.value += "No student in group " + groupName + "\n";
+                            continue;
+                        }
+
+                        // Print groupe header
+                        if ( bFlatCSV == false )
+                        {
+                            GroupsInCsv += "Group " + groupName + "\n";
+                        }
+
                         for( var j=0; j< students.length; j++ )
                         {
-                            GroupeInCsv = GroupeInCsv + students[j].trim() + ';' + items[0].trim() + '\n';
+                            // Add student to csv content;
+                            GroupsInCsv += GenerateCSVLine( groupName, students[j], bFlatCSV, emailSubstitutionString );
+
+                            // Increase number of groups
+                            NumberOfStudents = NumberOfStudents + 1;
                         }
+                        log.value += "Number of student in group " + groupName + ": " + students.length + "\n";
+                }
+
+                // Global log
+                log.value += "\n\nTotal number of group(s): " + NumberOfGroups + "\nTotal number of student(s): " + NumberOfStudents + "\n";
+
+                if ( bFlatCSV == true )
+                {
+                    // Is there emails in the student names ?
+                    if ( GroupsInCsv.search('@') > 0  )
+                    {
+                        GroupsInCsv = 'Student;Email;Group\n' + GroupsInCsv;
+                    }
+                    else
+                    {
+                        GroupsInCsv = 'Student;Group\n' + GroupsInCsv;
+                    }
                 }
 
                 // download the generated csv into a file called filename
                 // Code from https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
                 var element = document.createElement('a');
-                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(GroupeInCsv));
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(GroupsInCsv));
                 element.setAttribute('download', filename);
               
                 element.style.display = 'none';
@@ -51,11 +125,19 @@
               }
             </script>
 
-            <p>Step 1: You need to copy/paste the list of groups with students within the following text area. This list of groups :</p>
-            <textarea id="grouplist" style="width: 80%;height:20em;display:block;"></textarea>
-            <p>Step 2: Setup (or not) filename:</p>
+            <p>Step 1. You need to copy/paste the list of groups with students within the following text area. This list of groups:</p>
+            <textarea id="grouplist" style="width:80%;height:20em;display:block;"></textarea>
+            <p>Step 2. Select if you want to keep the email information (default=true): you can keep (or not) the email in the exported csv.</p>
+            <input type="checkbox" id="keep_email" name="keep_email" checked="checked">
+            <label for="keep_email">Keep students' emails</label><br>
+            <p>Step 3. Choose CSV style (default=flat): You can select Flat CSV to get rows containing student, (email, ), group name. Non flat CSV will generate Group name on a single line followed by list of students (without email) in this group (one on each line).</p>
+            <input type="checkbox" id="csv_style" name="csv_style" checked="checked">
+            <label for="csv_style">Flat CSV</label><br>
+            <p>Step 4. Setup (or not) filename:</p>
             <input type="text" id="filename" style="display:block;" value="MoodleGroups.csv">
-            <p>Step 3: Click on the button to get your file. You will be able to import it Excel, LibreOffice, Google docs, ...</p>            
-            <button onclick="CreateCSV();">Create CSV!</button>
+            <p>Step 5. Click on the button to get your file. You will be able to import it Excel, LibreOffice, Google docs, ...</p>            
+            <button onclick="CreateCSV();">Generate CSV!</button>
+            <p>Step 6. Check the log if mandatory</p>
+            <textarea id="log" style="width:80%;height:20em;display:block;"></textarea>
     </body>
 </html>
