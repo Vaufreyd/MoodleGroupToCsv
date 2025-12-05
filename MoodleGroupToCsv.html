@@ -40,6 +40,7 @@
 
                 var NumberOfGroups = 0;
                 var NumberOfStudents = 0;
+                var SeenStudents = new Set();
 
                 // parse text to make list of group and student
                 // 1 group per line
@@ -55,7 +56,14 @@
                         if ( items[0].length == 0 )
                         {
                             // warn
-                            log.value += "Empty group name on line " + (i+1) + "\n";
+                            log.value += "Not a group on line " + (i+1) + ": " + lines[i].slice(0,10) + "...\n";
+                            continue;
+                        }
+
+                        if ( items.length < 2 )
+                        {
+                            // warn
+                            log.value += "Not a group on line " + (i+1) + ": " + lines[i].slice(0,10) + "...\n";
                             continue;
                         }
 
@@ -64,13 +72,13 @@
 
                         // Increase number of groups
                         NumberOfGroups = NumberOfGroups + 1;
-                        log.value += "Processing group " + groupName + "\n";
+                        log.value += "Processing potential group " + groupName + "\n";
 
                         // item[1] should contain all students separated by comas
                         students = items[1].split(',');
 
                         // Is there any student in this group?
-                        if ( students.length == 1 && students[0] === '' )
+                        if ( (students.length == 1 && students[0] === '') || !students[0].includes('@') )
                         {
                             // warn
                             log.value += "No student in group " + groupName + "\n";
@@ -86,7 +94,16 @@
                         for( var j=0; j< students.length; j++ )
                         {
                             // Add student to csv content;
-                            GroupsInCsv += GenerateCSVLine( groupName, students[j], bFlatCSV, emailSubstitutionString );
+                            student = students[j].trim();
+                            // console.log(student);
+
+                            if ( SeenStudents.has(student) )
+                            {
+                                log.value += "**** Student '" + student + "' appears in several groups\n";
+                            }
+                            SeenStudents.add(student);
+
+                            GroupsInCsv += GenerateCSVLine( groupName, student, bFlatCSV, emailSubstitutionString );;
 
                             // Increase number of groups
                             NumberOfStudents = NumberOfStudents + 1;
@@ -95,7 +112,11 @@
                 }
 
                 // Global log
-                log.value += "\n\nTotal number of group(s): " + NumberOfGroups + "\nTotal number of student(s): " + NumberOfStudents + "\n";
+                log.value += "\n\nTotal number of group(s): " + NumberOfGroups + "\nTotal number of student(s) in groups: " + NumberOfStudents;
+                if ( NumberOfStudents != SeenStudents.size )
+                {
+                    log.value += "\nTotal number of unique student(s): " + SeenStudents.size + "\n";
+                }
 
                 if ( bFlatCSV == true )
                 {
