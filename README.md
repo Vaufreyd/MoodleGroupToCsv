@@ -1,5 +1,5 @@
 # MoodleGroupToCsv
-A local web page with some JavaScript to convert a list of Moodle groups with students to a searchable list for spreadsheet application.
+A local web page (no need to setup a web server) with some JavaScript to convert a list of Moodle groups with students to a searchable list for spreadsheet application.
 Your data are NOT SENT to an external server, computaiton is done locally on your computer (inside the Web page).
 
 # How to use it
